@@ -1,8 +1,7 @@
 #!/usr/bin/env node
 
-const path = require('node:path');
 const { Command } = require('commander');
-const DocusaurusScraper = require('../scrape-docusaurus');
+const DocusaurusScraper = require('../src/docusaurus-scraper');
 
 const program = new Command();
 
@@ -18,21 +17,21 @@ program
   .option('--no-metadata', 'Skip metadata in output')
   .action(async (url, options) => {
     try {
-    const scraper = new DocusaurusScraper({
-      headless: options.headless,
-      timeout: parseInt(options.timeout),
-      delay: parseInt(options.delay),
-      includeMetadata: options.metadata
-    });
+      const scraper = new DocusaurusScraper({
+        headless: options.headless,
+        timeout: parseInt(options.timeout),
+        delay: parseInt(options.delay),
+        includeMetadata: options.metadata,
+      });
 
-    const outputPath = options.output ||  `docs-${Date.now()}.md`;
-    
-    await scraper.scrape(url, outputPath);
-    console.log(`🎉 Documentation saved to ${outputPath}`);
-  } catch (error) {
-    console.error('❌ Error:', error.message);
-    process.exit(1);
-  }
-});
+      const outputPath = options.output || `docs-${Date.now()}.md`;
+
+      await scraper.scrape(url, outputPath);
+      console.log(`🎉 Documentation saved to ${outputPath}`);
+    } catch (error) {
+      console.error('❌ Error:', error.message);
+      process.exit(1);
+    }
+  });
 
 program.parse();

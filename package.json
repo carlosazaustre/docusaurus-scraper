@@ -1,23 +1,41 @@
 {
-  "name": "docusaurus-scraper_v2",
+  "name": "docusaurus-scraper",
   "version": "1.0.0",
-  "main": "index.js",
+  "description": "A command-line tool to extract documentation from Docusaurus sites and convert it to Markdown format",
+  "main": "src/index.js",
   "bin": {
-    "docusaurus-scraper": "./bin/cli.js.js"
+    "docusaurus-scraper": "./bin/cli.js"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
-  "keywords": ["docusaurus", "scraper", "markdown", "documentation"],
+  "keywords": [
+    "docusaurus",
+    "scraper",
+    "markdown",
+    "documentation",
+    "cli",
+    "docs"
+  ],
   "author": "Carlos Azaustre <cazaustre@gmail.com> (https://carlosazaustre.es)",
-  "license": "ISC",
-  "description": "",
+  "license": "MIT",
   "dependencies": {
     "commander": "^14.0.0",
     "playwright": "^1.53.1",
     "turndown": "^7.2.0"
-  }, 
+  },
   "engines": {
     "node": ">=14.0.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.29.0",
+    "eslint": "^9.29.0",
+    "eslint-config-prettier": "^10.1.5",
+    "eslint-plugin-prettier": "^5.5.0",
+    "prettier": "^3.5.3"
   }
 }

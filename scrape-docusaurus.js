@@ -2,113 +2,176 @@ const { chromium } = require('playwright');
 const TurndownService = require('turndown');
 const fs = require('node:fs');
 
-const turndown = new TurndownService({
-  headingStyle: 'atx',
-  bulletListMarker: '-',
-  codeBlockStyle: 'fenced',
-});
+class DocusaurusScraper {
+  constructor(options = {}) {
+    this.options = {
+      headless: true,
+      timeout: 10000,
+      delay: 50,
+      includeMetadata: true,
+      customSelectors: [],
+      ...options,
+    };
 
-turndown.addRule('codeBlock', {
-  filter: ['pre'],
-  replacement: (content, node) => {
-    const code = node.querySelector('code');
-    const lang = code?.className?.match(/language-(\w+)/)?.[1] || '';
-    return `\n\`\`\`${lang}\n${code?.textContent || content}\n\`\`\`\n`;
-  }
-});
+    this.turndown = new TurndownService({
+      headingStyle: 'atx',
+      bulletListMarker: '-',
+      codeBlockStyle: 'fenced',
+    });
 
-async function scrapeDocusaurus(baseUrl) {
-  const browser = await chromium.launch({ headless: true });
-  const page = await browser.newPage();
-
-  console.log('🔍 Searching documentation URLs...');
-
-  // Strategy 1): Trying Sitemap
-  let docUrls;
-  try {
-    await page.goto(`${baseUrl}/sitemap.xml`, { waitUntil: 'networkidle' });
-    const sitemapContent = await page.content();
-    const urlMatches = sitemapContent.match(/<loc>(.*?)<\/loc>/g);
-    if (urlMatches) {
-      docUrls = urlMatches
-        .map(match => match.replace(/<\/?loc>/g, ''))
-        .filter(url => url.includes(baseUrl) && !url.includes('#'));
-    }
-  } catch (e) {
-    console.error('⚠️ Error fetching sitemap, trying manually');
+    this.setupTurndownRules();
   }
 
-  // Strategy 2): Manual Scraping
-  if(docUrls.length === 0) {
-    await page.goto(baseUrl);
-    await page.waitForLoadState('networkidle');
+  setupTurndownRules() {
+    this.turndown.addRule('codeBlock', {
+      filter: ['pre'],
+      replacement: (content, node) => {
+        const code = node.querySelector('code');
+        const lang = code?.className?.match(/language-(\w+)/)?.[1] || '';
+        return `\n\`\`\`${lang}\n${code?.textContent || content}\n\`\`\`\n`;
+      }
+    });
 
-    const menuLinks = await page.$$eval('nav a, .menu a, .sidebar a', links =>
-      links.map(link => link.href).filter(href => href && href.includes(baseUrl))
-    );
-    docUrls = [...new Set(menuLinks)];
+    this.turndown.addRule('admonition', {
+      filter: (node) => node.classList.contains('admonition'),
+      replacement: (content, node) => {
+        const type = [...node.classList].find(c => c.startsWith('admonition-'))?.replace('admonition-', '') || 'note';
+        return `\n\n:::${type}\n${content}\n:::\n\n`;
+      }
+    });
   }
 
-  console.log(`📄 Found ${docUrls.length} documentation URLs.`);
+  async scrape(baseUrl, outputPath = null) {
+    if (!baseUrl) throw new Error('Base URL is required');
 
-  let allMarkdown = `# Documentation from: ${baseUrl}\nDate: ${new Date().toISOString()}\n\n---\n\n`;
+    const browser = await chromium.launch({ headless: this.options.headless });
+    const page = await browser.newPage();
 
-  for(let i = 0; i < docUrls.length; i++) {
-    const url = docUrls[i];
-    console.log(`📖 Processing ${i + 1}/${docUrls.length}: ${url}`);
+    console.log('🔍 Searching documentation URLs...');
 
     try {
-      await page.goto(url, { waitUntil: 'networkidle' });
-      await page.waitForSelector('main, article, .markdown, [class*="content"]', { timeout: 5000 });
+      const urls = await this.discoverUrls(page, baseUrl);
+      console.log(`📄 Found ${urls.length} documentation URLs.`);
 
-      const title = await page.title();
+      const markdown = await this.extractContent(page, urls, baseUrl);
 
-      const contentSelectors = [
-        'main article',
-        '.markdown',
-        '[class*="docItemContainer"]',
-        '[class*="content"]',
-        'main',
-        'article'
-      ];
+      if (outputPath) {
+        fs.writeFileSync(outputPath, markdown, 'utf8');
+        console.log(`✅ Documentation saved to ${outputPath}`);
+      }
 
-      let content = null;
-      for (const selector of contentSelectors) {
-        try {
-          const element = await page.$(selector);
-          if (element) {
-            content = await element.innerHTML();
-            break;
+      return markdown;
+    } catch (error) {
+      console.error(`❌ Error scraping Docusaurus: ${error.message}`);
+    } finally {
+      await browser.close();
+    }
+  }
+
+  async discoverUrls(page, baseUrl) {
+    const urls = new Set();
+
+    // 1) Sitemap Strategy
+    try {
+      await page.goto(`${baseUrl}/sitemap.xml`, { timeout: this.options.timeout });
+      const content = await page.content();
+      const matches = content.match(/<loc>(.*?)<\/loc>/g);
+      
+      if (matches) {
+        matches.forEach(match => {
+          const url = match.replace(/<\/?loc>/g, '');
+          if (url.startsWith(baseUrl) && !url.includes('#')) {
+            urls.add(url);
           }
+        });
+      }
+    } catch (e) {
+      console.warn('⚠️ Error fetching sitemap, trying manual discovery');
+    }
+
+    // 2) Manual Discovery Strategy
+    if (urls.size === 0) {
+      await page.goto(baseUrl, { timeout: this.options.timeout });
+      await page.waitForLoadState('networkidle');
+      
+      const selectors = [
+        'nav a[href*="/docs"]',
+        '.menu a',
+        '.sidebar a',
+        '[class*="sidebar"] a',
+        '[class*="menu"] a',
+        ...this.options.customSelectors
+      ];
+      
+      for (const selector of selectors) {
+        try {
+          const links = await page.$$eval(selector, links => 
+            links.map(l => l.href).filter(href => href)
+          );
+          links.forEach(url => {
+            if (url.startsWith(baseUrl)) urls.add(url);
+          });
         } catch (e) {
           continue;
         }
       }
-
-      if (content) {
-        const markdown = turndown.turndown(content);
-        const urlPath = new URL(url).pathname;
-
-        allMarkdown += `\n\n## ${title}\n\n**URL:** [${url}](${url})\n\n${markdown}\n\n---\n\n`;
-      } else {
-        console.warn(`⚠️ No content found for ${url}`);
-      }
-
-      // Pause to avoid overwhelming the server
-      await page.waitForTimeout(1000);
-    } catch (e) {
-      console.error(`❌ Error processing ${url}: ${e.message}`);
     }
+
+    return Array.from(urls).sort();
   }
 
-  await browser.close();
+  async extractContent(page, urls, baseUrl) {
+    let markdown = this.options.includeMetadata
+      ? `# Documentation from ${baseUrl}\n\nDate: ${new Date().toISOString()}\n\n---\n\n`
+      : '';
 
-  // Save the markdown to a file
-  const filename = `output-${Date.now()}.md`;
-  fs.writeFileSync(filename, allMarkdown, 'utf8');
+    for (const [url, index] of urls.entries()) {
+      console.log(`\n🔗 Processing ${index + 1}/${urls.length}: ${url}`);
+      
+      try {
+        await page.goto(url, { timeout: this.options.timeout });
+        await page.waitForLoadState('networkidle');
 
-  console.log(`✅ Documentation saved to ${filename}`);
-  console.log(`📊 Size: ${(allMarkdown.length / 1024).toFixed(1)} KB`);
+        const contentSelectors = [
+          'main article',
+          '.markdown',
+          '[class*="docItemContainer"]',
+          '[class*="docMainContainer"]',
+          '[class*="content"]',
+          'main',
+          'article'
+        ];
+
+        const title = await page.title();
+        let content = null;
+
+        for (const selector of contentSelectors) {
+          try {
+            const element = await page.$(selector);
+            if (element) {
+              content = await element.evaluate(el => el.innerHTML);
+              break;
+            }
+          } catch (e) {
+            continue;
+          }
+        }
+
+        if (content) {
+          const pageMarkdown = this.turndown.turndown(content);
+          const urlPath = new URL(url).pathname;
+
+          markdown += `\n\n## ${title}\n\n**URL:** ${url}\n**Ruta:** ${urlPath}\n\n${pageMarkdown}\n\n---\n`;
+        }
+
+        await page.waitForTimeout(this.options.delay);
+      } catch (error) {
+        console.error(`❌ Error processing ${url}: ${error.message}`);
+      }
+    }
+
+    return markdown;
+  }
 }
 
-scrapeDocusaurus('https://docs.kemtai.com').catch(console.error);
+module.exports = DocusaurusScraper;

@@ -2,15 +2,22 @@
   "name": "docusaurus-scraper_v2",
   "version": "1.0.0",
   "main": "index.js",
+  "bin": {
+    "docusaurus-scraper": "./bin/cli.js.js"
+  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": ["docusaurus", "scraper", "markdown", "documentation"],
+  "author": "Carlos Azaustre <cazaustre@gmail.com> (https://carlosazaustre.es)",
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "commander": "^14.0.0",
     "playwright": "^1.53.1",
     "turndown": "^7.2.0"
+  }, 
+  "engines": {
+    "node": ">=14.0.0"
   }
 }

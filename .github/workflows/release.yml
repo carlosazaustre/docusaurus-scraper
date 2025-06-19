@@ -16,9 +16,7 @@ jobs:
         id: release
         with:
           release-type: node
-          package-name: docusaurus-scraper
-          env:
-           GITHUB_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN }}
+          token: ${{ secrets.RELEASE_PLEASE_TOKEN }}
 
       - uses: actions/checkout@v4
         if: ${{ steps.release.outputs.release_created }}

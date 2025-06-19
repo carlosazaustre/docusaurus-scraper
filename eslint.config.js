@@ -1,48 +1,64 @@
-const js = require('@eslint/js');
-const prettier = require('eslint-config-prettier');
-const prettierPlugin = require('eslint-plugin-prettier');
+import js from '@eslint/js';
+import tseslint from '@typescript-eslint/eslint-plugin';
+import tsparser from '@typescript-eslint/parser';
 
-module.exports = [
-  js.configs.recommended,
-  prettier,
+export default [
   {
-    files: ['**/*.js'],
+    ignores: ['dist/**/*', 'node_modules/**/*', '*.min.js', 'coverage/**/*'],
+  },
+  js.configs.recommended,
+  {
+    files: ['src/**/*.{js,ts}'],
     languageOptions: {
-      ecmaVersion: 2021,
-      sourceType: 'commonjs',
+      parser: tsparser,
+      parserOptions: {
+        ecmaVersion: 'latest',
+        sourceType: 'module',
+      },
       globals: {
+        // Node.js globals
         console: 'readonly',
         process: 'readonly',
         Buffer: 'readonly',
         __dirname: 'readonly',
         __filename: 'readonly',
         global: 'readonly',
-        module: 'readonly',
         require: 'readonly',
+        module: 'readonly',
         exports: 'readonly',
+        // Browser globals
+        window: 'readonly',
+        document: 'readonly',
+        HTMLElement: 'readonly',
+        HTMLAnchorElement: 'readonly',
+        Node: 'readonly',
         URL: 'readonly',
       },
     },
     plugins: {
-      prettier: prettierPlugin,
+      '@typescript-eslint': tseslint,
     },
     rules: {
-      'prettier/prettier': 'error',
-      'no-console': 'off',
-      'no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
+      ...tseslint.configs.recommended.rules,
+      'no-unused-vars': 'off',
+      '@typescript-eslint/no-unused-vars': 'warn',
+      '@typescript-eslint/no-explicit-any': 'warn',
+      'prefer-const': 'error',
+      'no-var': 'error',
+      'no-useless-escape': 'warn',
     },
   },
   {
-    ignores: [
-      'node_modules/**',
-      'dist/**',
-      'build/**',
-      'coverage/**',
-      '*.md',
-      '*.json',
-      '.github/**',
-      'docs-*.md',
-      'output-*.md',
-    ],
+    files: ['*.config.{js,ts}', '*.config.*.{js,ts}'],
+    languageOptions: {
+      sourceType: 'module',
+      globals: {
+        console: 'readonly',
+        process: 'readonly',
+        require: 'readonly',
+        module: 'readonly',
+        exports: 'readonly',
+      },
+    },
   },
 ];

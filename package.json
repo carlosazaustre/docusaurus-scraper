@@ -2,16 +2,43 @@
   "name": "docusaurus-scraper",
   "version": "1.0.0",
   "description": "A command-line tool to extract documentation from Docusaurus sites and convert it to Markdown format",
-  "main": "src/index.js",
+  "type": "module",
+  "exports": {
+    "./package.json": "./package.json",
+    ".": {
+      "import": {
+        "types": "./dist/esm/index.d.ts",
+        "default": "./dist/esm/index.js"
+      },
+      "require": {
+        "types": "./dist/commonjs/index.d.ts",
+        "default": "./dist/commonjs/index.js"
+      }
+    }
+  },
+  "main": "./dist/commonjs/index.js",
+  "types": "./dist/commonjs/index.d.ts",
   "bin": {
-    "docusaurus-scraper": "./bin/cli.js"
+    "docusaurus-scraper": "./dist/commonjs/cli.js"
   },
   "scripts": {
+    "build": "tshy",
+    "clean": "rm -rf dist",
+    "prepublishOnly": "npm run clean && npm run build",
     "test": "echo \"Error: no test specified\" && exit 1",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
+  },
+  "tshy": {
+    "exports": {
+      "./package.json": "./package.json",
+      ".": "./src/index.ts"
+    },
+    "bin": {
+      "docusaurus-scraper": "./src/cli.ts"
+    }
   },
   "keywords": [
     "docusaurus",
@@ -33,9 +60,16 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.29.0",
+    "@types/node": "^20.0.0",
+    "@types/turndown": "^5.0.4",
+    "@typescript-eslint/eslint-plugin": "^8.34.1",
+    "@typescript-eslint/parser": "^8.34.1",
     "eslint": "^9.29.0",
     "eslint-config-prettier": "^10.1.5",
     "eslint-plugin-prettier": "^5.5.0",
-    "prettier": "^3.5.3"
-  }
+    "prettier": "^3.5.3",
+    "tshy": "^3.0.0",
+    "typescript": "^5.0.0"
+  },
+  "module": "./dist/esm/index.js"
 }

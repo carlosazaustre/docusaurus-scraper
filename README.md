@@ -48,12 +48,18 @@ docusaurus-scraper https://docs.example.com -t 15000 -d 1000
 
 # Skip metadata in output
 docusaurus-scraper https://docs.example.com --no-metadata
+
+# Combine multiple options
+docusaurus-scraper https://docs.example.com -o output.md -t 20000 --no-headless
 ```
 
 ### Programmatic Usage
 
+The package supports both CommonJS and ES Modules, and can be used with TypeScript:
+
+#### CommonJS
 ```javascript
-const DocusaurusScraper = require('docusaurus-scraper');
+const { DocusaurusScraper } = require('docusaurus-scraper');
 
 const scraper = new DocusaurusScraper({
   headless: true,
@@ -66,15 +72,51 @@ const markdown = await scraper.scrape('https://docs.example.com', 'output.md');
 console.log('Documentation extracted successfully!');
 ```
 
+#### ES Modules
+```javascript
+import { DocusaurusScraper } from 'docusaurus-scraper';
+
+const scraper = new DocusaurusScraper({
+  headless: true,
+  timeout: 10000,
+  delay: 500,
+  includeMetadata: true,
+});
+
+const markdown = await scraper.scrape('https://docs.example.com', 'output.md');
+console.log('Documentation extracted successfully!');
+```
+
+#### TypeScript
+```typescript
+import { DocusaurusScraper, ScraperOptions } from 'docusaurus-scraper';
+
+const options: ScraperOptions = {
+  headless: true,
+  timeout: 10000,
+  delay: 500,
+  includeMetadata: true,
+};
+
+const scraper = new DocusaurusScraper(options);
+
+try {
+  await scraper.scrape('https://docs.example.com', 'output.md');
+  console.log('Documentation extracted successfully!');
+} catch (error) {
+  console.error('Extraction failed:', error);
+}
+```
+
 ## CLI Options
 
 | Option                | Description                  | Default               |
 | --------------------- | ---------------------------- | --------------------- |
 | `-o, --output <file>` | Output markdown file         | `docs-{timestamp}.md` |
-| `--no-headless`       | Run browser in visible mode  | `false`               |
+| `--no-headless`       | Run browser in visible mode  | `false` (headless)    |
 | `-t, --timeout <ms>`  | Page timeout in milliseconds | `10000`               |
 | `-d, --delay <ms>`    | Delay between requests       | `500`                 |
-| `--no-metadata`       | Skip metadata in output      | `false`               |
+| `--no-metadata`       | Skip metadata in output      | `false` (include)     |
 
 ## Configuration Options
 

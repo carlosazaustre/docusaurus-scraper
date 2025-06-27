@@ -1,4 +1,9 @@
 /**
+ * Supported documentation platforms
+ */
+export type Platform = 'docusaurus' | 'mintlify' | 'auto';
+
+/**
  * Configuration options for the DocusaurusScraper
  */
 export interface ScraperOptions {
@@ -12,6 +17,8 @@ export interface ScraperOptions {
   includeMetadata?: boolean;
   /** Custom CSS selectors for finding navigation links */
   customSelectors?: string[];
+  /** Documentation platform type */
+  platform?: Platform;
 }
 
 /**
@@ -42,4 +49,21 @@ export interface CLIOptions {
   timeout: string;
   delay: string;
   metadata: boolean;
+  platform: Platform;
+}
+
+/**
+ * Platform-specific configuration for selectors and strategies
+ */
+export interface PlatformConfig {
+  /** Selectors for navigation links */
+  navigationSelectors: string[];
+  /** Selectors for main content */
+  contentSelectors: string[];
+  /** Whether to try sitemap.xml discovery */
+  useSitemap: boolean;
+  /** Additional URL patterns to include */
+  urlPatterns?: RegExp[];
+  /** Additional URL patterns to exclude */
+  excludePatterns?: RegExp[];
 }

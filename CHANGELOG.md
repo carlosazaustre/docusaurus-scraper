@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0](https://github.com/carlosazaustre/docusaurus-scraper/compare/v1.1.0...v1.2.0) (2025-06-27)
+
+
+### Features
+
+* add multi-platform support  ([fcc6c92](https://github.com/carlosazaustre/docusaurus-scraper/commit/fcc6c928b2fb12f666f243fff9ed6ff39efadc7a))
+* add recursive crawling option to CLI and scraper ([d6411c5](https://github.com/carlosazaustre/docusaurus-scraper/commit/d6411c584b8ecf47d7e7dc330e1d7ae2a8d66579))
+
+
+### Bug Fixes
+
+* clean up JSON exclude arrays and improve code formatting ([b553459](https://github.com/carlosazaustre/docusaurus-scraper/commit/b553459197700207702c76d8de57d98acd3162d2))
+
 ## [1.1.0](https://github.com/carlosazaustre/docusaurus-scraper/compare/v1.0.0...v1.1.0) (2025-06-19)
 
 ### Features

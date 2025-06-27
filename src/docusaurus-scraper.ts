@@ -1,7 +1,12 @@
 import { Browser, chromium, Page } from 'playwright';
 import TurndownService from 'turndown';
 import { promises as fs } from 'node:fs';
-import { ScraperOptions, TurndownConfig, Platform, PlatformConfig } from './types.js';
+import {
+  ScraperOptions,
+  TurndownConfig,
+  Platform,
+  PlatformConfig,
+} from './types.js';
 
 /**
  * DocusaurusScraper class for extracting documentation from Docusaurus sites and alternatives
@@ -141,13 +146,20 @@ export class DocusaurusScraper {
     try {
       // Look for platform-specific indicators
       const indicators = await page.evaluate(() => {
-        const hasDocusaurusClass = document.querySelector('[class*="docusaurus"]') !== null;
-        const hasDocusaurusScript = Array.from(document.scripts).some(script => 
-          script.src.includes('docusaurus') || script.textContent?.includes('docusaurus')
+        const hasDocusaurusClass =
+          document.querySelector('[class*="docusaurus"]') !== null;
+        const hasDocusaurusScript = Array.from(document.scripts).some(
+          (script) =>
+            script.src.includes('docusaurus') ||
+            script.textContent?.includes('docusaurus')
         );
-        const hasMintlifyMeta = document.querySelector('meta[name="generator"][content*="Mintlify"]') !== null;
-        const hasMintlifyClass = document.querySelector('[class*="mintlify"]') !== null;
-        
+        const hasMintlifyMeta =
+          document.querySelector(
+            'meta[name="generator"][content*="Mintlify"]'
+          ) !== null;
+        const hasMintlifyClass =
+          document.querySelector('[class*="mintlify"]') !== null;
+
         return {
           hasDocusaurusClass,
           hasDocusaurusScript,
@@ -159,7 +171,7 @@ export class DocusaurusScraper {
       if (indicators.hasDocusaurusClass || indicators.hasDocusaurusScript) {
         return 'docusaurus';
       }
-      
+
       if (indicators.hasMintlifyMeta || indicators.hasMintlifyClass) {
         return 'mintlify';
       }
@@ -242,7 +254,9 @@ export class DocusaurusScraper {
             if (url.startsWith(baseUrl) && !url.includes('#')) {
               // Apply platform-specific URL patterns if available
               if (config.urlPatterns) {
-                const matchesPattern = config.urlPatterns.some(pattern => pattern.test(url));
+                const matchesPattern = config.urlPatterns.some((pattern) =>
+                  pattern.test(url)
+                );
                 if (matchesPattern) {
                   discoveredUrls.add(url);
                 }
@@ -252,7 +266,7 @@ export class DocusaurusScraper {
             }
           });
         }
-        
+
         if (discoveredUrls.size > 0) {
           console.log(`📄 Found ${discoveredUrls.size} URLs from sitemap`);
           return Array.from(discoveredUrls).sort();
@@ -264,22 +278,24 @@ export class DocusaurusScraper {
 
     // Strategy 2: Recursive crawling through navigation links
     console.log('🕷️ Starting recursive crawling...');
-    
+
     while (urlsToVisit.size > 0) {
       const currentUrl = Array.from(urlsToVisit)[0];
       if (!currentUrl) {
         break;
       }
-      
+
       urlsToVisit.delete(currentUrl);
-      
+
       if (visitedUrls.has(currentUrl)) {
         continue;
       }
-      
+
       visitedUrls.add(currentUrl);
-      console.log(`🔍 Crawling: ${currentUrl} (${visitedUrls.size} visited, ${urlsToVisit.size} pending)`);
-      
+      console.log(
+        `🔍 Crawling: ${currentUrl} (${visitedUrls.size} visited, ${urlsToVisit.size} pending)`
+      );
+
       try {
         await page.goto(currentUrl, { timeout: this.timeout });
         await page.waitForLoadState('networkidle');
@@ -305,13 +321,19 @@ export class DocusaurusScraper {
               (links: HTMLAnchorElement[]) =>
                 links.map((l) => l.href).filter((href) => href)
             );
-            
+
             links.forEach((url) => {
               // Only include URLs from the same host
-              if (url.startsWith(baseUrl) && !url.includes('#') && !visitedUrls.has(url)) {
+              if (
+                url.startsWith(baseUrl) &&
+                !url.includes('#') &&
+                !visitedUrls.has(url)
+              ) {
                 // Apply exclusion patterns if available
                 if (config.excludePatterns) {
-                  const shouldExclude = config.excludePatterns.some(pattern => pattern.test(url));
+                  const shouldExclude = config.excludePatterns.some((pattern) =>
+                    pattern.test(url)
+                  );
                   if (!shouldExclude) {
                     urlsToVisit.add(url);
                   }
@@ -325,12 +347,16 @@ export class DocusaurusScraper {
           }
         }
       } catch (error) {
-        console.warn(`⚠️ Error crawling ${currentUrl}: ${error instanceof Error ? error.message : String(error)}`);
+        console.warn(
+          `⚠️ Error crawling ${currentUrl}: ${error instanceof Error ? error.message : String(error)}`
+        );
         continue;
       }
     }
 
-    console.log(`✅ Crawling completed. Found ${discoveredUrls.size} documentation pages.`);
+    console.log(
+      `✅ Crawling completed. Found ${discoveredUrls.size} documentation pages.`
+    );
     return Array.from(discoveredUrls).sort();
   }
 
@@ -340,14 +366,19 @@ export class DocusaurusScraper {
    * @param config - Platform configuration
    * @returns Promise resolving to boolean indicating if page has documentation content
    */
-  private async hasDocumentationContent(page: Page, config: PlatformConfig): Promise<boolean> {
+  private async hasDocumentationContent(
+    page: Page,
+    config: PlatformConfig
+  ): Promise<boolean> {
     try {
       // Check if any of the content selectors find meaningful content
       for (const selector of config.contentSelectors) {
         try {
           const element = await page.$(selector);
           if (element) {
-            const textContent = await element.evaluate((el: HTMLElement) => el.textContent?.trim() || '');
+            const textContent = await element.evaluate(
+              (el: HTMLElement) => el.textContent?.trim() || ''
+            );
             // Consider it documentation if it has substantial text content (more than 100 characters)
             if (textContent && textContent.length > 100) {
               return true;
@@ -369,11 +400,16 @@ export class DocusaurusScraper {
    * @param platform - Platform type to use for selector configuration
    * @returns Promise resolving to extracted content or empty string
    */
-  private async extractContent(page: Page, platform?: Platform): Promise<string> {
+  private async extractContent(
+    page: Page,
+    platform?: Platform
+  ): Promise<string> {
     // Use the specified platform or fall back to instance platform
     const currentPlatform = platform || this.platform;
-    const config = this.getPlatformConfig(currentPlatform === 'auto' ? 'auto' : currentPlatform);
-    
+    const config = this.getPlatformConfig(
+      currentPlatform === 'auto' ? 'auto' : currentPlatform
+    );
+
     const contentSelectors = config.contentSelectors;
 
     const title = await page.title();

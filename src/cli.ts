@@ -16,7 +16,9 @@ async function main(url: string, options: CLIOptions): Promise<void> {
     // Validate platform option
     const validPlatforms: Platform[] = ['docusaurus', 'mintlify', 'auto'];
     if (!validPlatforms.includes(options.platform)) {
-      console.error(`❌ Invalid platform: ${options.platform}. Valid options: ${validPlatforms.join(', ')}`);
+      console.error(
+        `❌ Invalid platform: ${options.platform}. Valid options: ${validPlatforms.join(', ')}`
+      );
       process.exit(1);
     }
 
@@ -51,8 +53,15 @@ program
   .option('-t, --timeout <ms>', 'Page timeout in milliseconds', '10000')
   .option('-d, --delay <ms>', 'Delay between requests', '500')
   .option('--no-metadata', 'Skip metadata in output')
-  .option('-p, --platform <platform>', 'Documentation platform type (docusaurus, mintlify, auto)', 'auto')
-  .option('--no-recursive-crawling', 'Disable recursive crawling and use sitemap/initial discovery only')
+  .option(
+    '-p, --platform <platform>',
+    'Documentation platform type (docusaurus, mintlify, auto)',
+    'auto'
+  )
+  .option(
+    '--no-recursive-crawling',
+    'Disable recursive crawling and use sitemap/initial discovery only'
+  )
   .action(main);
 
 program.parse();

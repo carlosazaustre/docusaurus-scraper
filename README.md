@@ -69,6 +69,7 @@ docusaurus-scraper https://docs.example.com -o output.md -t 20000 --platform min
 The package supports both CommonJS and ES Modules, and can be used with TypeScript:
 
 #### CommonJS
+
 ```javascript
 const { DocusaurusScraper } = require('docusaurus-scraper');
 
@@ -85,6 +86,7 @@ console.log('Documentation extracted successfully!');
 ```
 
 #### ES Modules
+
 ```javascript
 import { DocusaurusScraper } from 'docusaurus-scraper';
 
@@ -101,6 +103,7 @@ console.log('Documentation extracted successfully!');
 ```
 
 #### TypeScript
+
 ```typescript
 import { DocusaurusScraper, ScraperOptions } from 'docusaurus-scraper';
 
@@ -124,14 +127,14 @@ try {
 
 ## CLI Options
 
-| Option                   | Description                              | Default               |
-| ------------------------ | ---------------------------------------- | --------------------- |
-| `-o, --output <file>`    | Output markdown file                     | `docs-{timestamp}.md` |
-| `--no-headless`          | Run browser in visible mode             | `false` (headless)    |
-| `-t, --timeout <ms>`     | Page timeout in milliseconds            | `10000`               |
-| `-d, --delay <ms>`       | Delay between requests                   | `500`                 |
-| `--no-metadata`          | Skip metadata in output                  | `false` (include)     |
-| `-p, --platform <type>`  | Platform type (docusaurus, mintlify, auto) | `auto`                |
+| Option                  | Description                                | Default               |
+| ----------------------- | ------------------------------------------ | --------------------- |
+| `-o, --output <file>`   | Output markdown file                       | `docs-{timestamp}.md` |
+| `--no-headless`         | Run browser in visible mode                | `false` (headless)    |
+| `-t, --timeout <ms>`    | Page timeout in milliseconds               | `10000`               |
+| `-d, --delay <ms>`      | Delay between requests                     | `500`                 |
+| `--no-metadata`         | Skip metadata in output                    | `false` (include)     |
+| `-p, --platform <type>` | Platform type (docusaurus, mintlify, auto) | `auto`                |
 
 ## Configuration Options
 
@@ -162,6 +165,7 @@ Example output structure:
 
 ```markdown
 # Documentation from: https://docs.example.com
+
 Platform: docusaurus
 Date: 2025-01-19T10:30:00.000Z
 

@@ -19,6 +19,8 @@ export interface ScraperOptions {
   customSelectors?: string[];
   /** Documentation platform type */
   platform?: Platform;
+  /** Whether to use recursive crawling instead of sitemap/initial discovery */
+  recursiveCrawling?: boolean;
 }
 
 /**
@@ -50,6 +52,7 @@ export interface CLIOptions {
   delay: string;
   metadata: boolean;
   platform: Platform;
+  recursiveCrawling: boolean;
 }
 
 /**

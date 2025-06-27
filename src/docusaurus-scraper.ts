@@ -13,6 +13,7 @@ export class DocusaurusScraper {
   private readonly includeMetadata: boolean;
   private readonly customSelectors: string[];
   private readonly platform: Platform;
+  private readonly recursiveCrawling: boolean;
   private readonly turndown: TurndownService;
 
   /**
@@ -26,6 +27,7 @@ export class DocusaurusScraper {
     this.includeMetadata = options.includeMetadata ?? true;
     this.customSelectors = options.customSelectors || [];
     this.platform = options.platform || 'auto';
+    this.recursiveCrawling = options.recursiveCrawling ?? true;
 
     const turndownConfig: TurndownConfig = {
       headingStyle: 'atx',
@@ -86,6 +88,17 @@ export class DocusaurusScraper {
         ],
         useSitemap: true,
         urlPatterns: [/\/docs\//, /\/guide\//, /\/api\//, /\/reference\//],
+        excludePatterns: [
+          /\/api\/auth\//,
+          /\/oauth\//,
+          /\/login/,
+          /\/signup/,
+          /\/dashboard/,
+          /\/settings/,
+          /\.(css|js|json|xml|ico|png|jpg|jpeg|gif|svg)$/i,
+          /\/assets\//,
+          /\/static\//,
+        ],
       },
       auto: {
         navigationSelectors: [
@@ -192,7 +205,7 @@ export class DocusaurusScraper {
   }
 
   /**
-   * Discovers documentation URLs from a documentation site
+   * Discovers documentation URLs from a documentation site with recursive crawling
    * @param page - Playwright page instance
    * @param baseUrl - Base URL of the documentation site
    * @returns Promise resolving to array of discovered URLs
@@ -201,7 +214,9 @@ export class DocusaurusScraper {
     page: Page,
     baseUrl: string
   ): Promise<string[]> {
-    const urls = new Set<string>();
+    const discoveredUrls = new Set<string>();
+    const visitedUrls = new Set<string>();
+    const urlsToVisit = new Set<string>([baseUrl]);
 
     // Detect platform if using auto mode
     let currentPlatform = this.platform;
@@ -214,8 +229,8 @@ export class DocusaurusScraper {
 
     const config = this.getPlatformConfig(currentPlatform);
 
-    // Strategy 1: Try to get URLs from sitemap.xml if platform supports it
-    if (config.useSitemap) {
+    // Strategy 1: Try to get URLs from sitemap.xml if platform supports it and recursive crawling is disabled
+    if (config.useSitemap && !this.recursiveCrawling) {
       try {
         await page.goto(`${baseUrl}/sitemap.xml`, { timeout: this.timeout });
         const content = await page.content();
@@ -229,58 +244,123 @@ export class DocusaurusScraper {
               if (config.urlPatterns) {
                 const matchesPattern = config.urlPatterns.some(pattern => pattern.test(url));
                 if (matchesPattern) {
-                  urls.add(url);
+                  discoveredUrls.add(url);
                 }
               } else {
-                urls.add(url);
+                discoveredUrls.add(url);
               }
             }
           });
         }
+        
+        if (discoveredUrls.size > 0) {
+          console.log(`📄 Found ${discoveredUrls.size} URLs from sitemap`);
+          return Array.from(discoveredUrls).sort();
+        }
       } catch {
-        console.warn('⚠️ Error fetching sitemap, trying manual discovery');
+        console.warn('⚠️ Error fetching sitemap, trying recursive crawling');
       }
     }
 
-    // Strategy 2: Manual discovery through navigation links
-    if (urls.size === 0) {
-      if (currentPlatform !== 'auto') {
-        await page.goto(baseUrl, { timeout: this.timeout });
-        await page.waitForLoadState('networkidle');
+    // Strategy 2: Recursive crawling through navigation links
+    console.log('🕷️ Starting recursive crawling...');
+    
+    while (urlsToVisit.size > 0) {
+      const currentUrl = Array.from(urlsToVisit)[0];
+      if (!currentUrl) {
+        break;
       }
+      
+      urlsToVisit.delete(currentUrl);
+      
+      if (visitedUrls.has(currentUrl)) {
+        continue;
+      }
+      
+      visitedUrls.add(currentUrl);
+      console.log(`🔍 Crawling: ${currentUrl} (${visitedUrls.size} visited, ${urlsToVisit.size} pending)`);
+      
+      try {
+        await page.goto(currentUrl, { timeout: this.timeout });
+        await page.waitForLoadState('networkidle');
+        await page.waitForTimeout(this.delay);
 
-      const selectors = [
-        ...config.navigationSelectors,
-        ...this.customSelectors,
-      ];
+        // Check if this page has documentation content
+        const hasContent = await this.hasDocumentationContent(page, config);
+        if (hasContent) {
+          discoveredUrls.add(currentUrl);
+        }
 
-      for (const selector of selectors) {
-        try {
-          const links = await page.$$eval(
-            selector,
-            (links: HTMLAnchorElement[]) =>
-              links.map((l) => l.href).filter((href) => href)
-          );
-          links.forEach((url) => {
-            if (url.startsWith(baseUrl)) {
-              // Apply exclusion patterns if available
-              if (config.excludePatterns) {
-                const shouldExclude = config.excludePatterns.some(pattern => pattern.test(url));
-                if (!shouldExclude) {
-                  urls.add(url);
+        // Find all links on the current page
+        const selectors = [
+          ...config.navigationSelectors,
+          ...this.customSelectors,
+          'a[href]', // Include all links for more comprehensive crawling
+        ];
+
+        for (const selector of selectors) {
+          try {
+            const links = await page.$$eval(
+              selector,
+              (links: HTMLAnchorElement[]) =>
+                links.map((l) => l.href).filter((href) => href)
+            );
+            
+            links.forEach((url) => {
+              // Only include URLs from the same host
+              if (url.startsWith(baseUrl) && !url.includes('#') && !visitedUrls.has(url)) {
+                // Apply exclusion patterns if available
+                if (config.excludePatterns) {
+                  const shouldExclude = config.excludePatterns.some(pattern => pattern.test(url));
+                  if (!shouldExclude) {
+                    urlsToVisit.add(url);
+                  }
+                } else {
+                  urlsToVisit.add(url);
                 }
-              } else {
-                urls.add(url);
               }
+            });
+          } catch {
+            continue;
+          }
+        }
+      } catch (error) {
+        console.warn(`⚠️ Error crawling ${currentUrl}: ${error instanceof Error ? error.message : String(error)}`);
+        continue;
+      }
+    }
+
+    console.log(`✅ Crawling completed. Found ${discoveredUrls.size} documentation pages.`);
+    return Array.from(discoveredUrls).sort();
+  }
+
+  /**
+   * Checks if a page contains documentation content
+   * @param page - Playwright page instance
+   * @param config - Platform configuration
+   * @returns Promise resolving to boolean indicating if page has documentation content
+   */
+  private async hasDocumentationContent(page: Page, config: PlatformConfig): Promise<boolean> {
+    try {
+      // Check if any of the content selectors find meaningful content
+      for (const selector of config.contentSelectors) {
+        try {
+          const element = await page.$(selector);
+          if (element) {
+            const textContent = await element.evaluate((el: HTMLElement) => el.textContent?.trim() || '');
+            // Consider it documentation if it has substantial text content (more than 100 characters)
+            if (textContent && textContent.length > 100) {
+              return true;
             }
-          });
+          }
         } catch {
           continue;
         }
       }
+      return false;
+    } catch {
+      return false;
     }
-
-    return Array.from(urls).sort();
   }
 
   /**

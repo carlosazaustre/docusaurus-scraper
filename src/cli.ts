@@ -26,6 +26,7 @@ async function main(url: string, options: CLIOptions): Promise<void> {
       delay: parseInt(options.delay, 10),
       includeMetadata: options.metadata,
       platform: options.platform,
+      recursiveCrawling: options.recursiveCrawling,
     });
 
     const outputPath = options.output || `docs-${Date.now()}.md`;
@@ -51,6 +52,7 @@ program
   .option('-d, --delay <ms>', 'Delay between requests', '500')
   .option('--no-metadata', 'Skip metadata in output')
   .option('-p, --platform <platform>', 'Documentation platform type (docusaurus, mintlify, auto)', 'auto')
+  .option('--no-recursive-crawling', 'Disable recursive crawling and use sitemap/initial discovery only')
   .action(main);
 
 program.parse();

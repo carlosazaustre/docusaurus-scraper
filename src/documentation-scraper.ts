@@ -11,7 +11,7 @@ import {
 /**
  * DocusaurusScraper class for extracting documentation from Docusaurus sites and alternatives
  */
-export class DocusaurusScraper {
+export class DocumentationScraper {
   private readonly headless: boolean;
   private readonly timeout: number;
   private readonly delay: number;

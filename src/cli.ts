@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { Command } from 'commander';
-import { DocusaurusScraper } from './docusaurus-scraper.js';
+import { DocumentationScraper } from './documentation-scraper.js';
 import { CLIOptions, Platform } from './types.js';
 
 const program = new Command();
@@ -22,7 +22,7 @@ async function main(url: string, options: CLIOptions): Promise<void> {
       process.exit(1);
     }
 
-    const scraper = new DocusaurusScraper({
+    const scraper = new DocumentationScraper({
       headless: options.headless,
       timeout: parseInt(options.timeout, 10),
       delay: parseInt(options.delay, 10),

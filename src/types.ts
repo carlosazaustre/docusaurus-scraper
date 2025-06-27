@@ -4,7 +4,7 @@
 export type Platform = 'docusaurus' | 'mintlify' | 'auto';
 
 /**
- * Configuration options for the DocusaurusScraper
+ * Configuration options for the DocumentationScraper
  */
 export interface ScraperOptions {
   /** Whether to run browser in headless mode */

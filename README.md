@@ -71,9 +71,9 @@ The package supports both CommonJS and ES Modules, and can be used with TypeScri
 #### CommonJS
 
 ```javascript
-const { DocusaurusScraper } = require('docusaurus-scraper');
+const { DocumentationScraper } = require('docusaurus-scraper');
 
-const scraper = new DocusaurusScraper({
+const scraper = new DocumentationScraper({
   headless: true,
   timeout: 10000,
   delay: 500,
@@ -88,9 +88,9 @@ console.log('Documentation extracted successfully!');
 #### ES Modules
 
 ```javascript
-import { DocusaurusScraper } from 'docusaurus-scraper';
+import { DocumentationScraper } from 'docusaurus-scraper';
 
-const scraper = new DocusaurusScraper({
+const scraper = new DocumentationScraper({
   headless: true,
   timeout: 10000,
   delay: 500,
@@ -105,7 +105,7 @@ console.log('Documentation extracted successfully!');
 #### TypeScript
 
 ```typescript
-import { DocusaurusScraper, ScraperOptions } from 'docusaurus-scraper';
+import { DocumentationScraper, ScraperOptions } from 'docusaurus-scraper';
 
 const options: ScraperOptions = {
   headless: true,
@@ -115,7 +115,7 @@ const options: ScraperOptions = {
   platform: 'auto', // Platform can be specified here
 };
 
-const scraper = new DocusaurusScraper(options);
+const scraper = new DocumentationScraper(options);
 
 try {
   await scraper.scrape('https://docs.example.com', 'output.md');
@@ -141,7 +141,7 @@ try {
 When using programmatically, you can pass these options to the constructor:
 
 ```javascript
-const scraper = new DocusaurusScraper({
+const scraper = new DocumentationScraper({
   headless: true, // Run browser in headless mode
   timeout: 10000, // Page load timeout
   delay: 500, // Delay between page requests

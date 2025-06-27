@@ -1,6 +1,6 @@
-# Docusaurus Scraper
+# Documentation Scraper
 
-A command-line tool to extract documentation from Docusaurus sites and convert it to Markdown format.
+A command-line tool to extract documentation from Docusaurus sites and alternatives like Mintlify, converting them to Markdown format.
 
 ## Motivation
 
@@ -8,10 +8,11 @@ When working with AI-powered code completion and generation tools, you often nee
 
 This tool solves that problem by:
 
-- **Extracting complete documentation** from Docusaurus sites
+- **Extracting complete documentation** from multiple documentation platforms
 - **Converting to Markdown format** that's optimal for LLM consumption
 - **Preserving structure and formatting** including code blocks, links, and navigation
 - **Providing context-rich output** that helps AI agents understand how to use libraries and APIs
+- **Supporting multiple platforms** including Docusaurus, Mintlify, and others
 
 Perfect for feeding documentation to AI coding assistants, building knowledge bases, or creating offline documentation archives.
 
@@ -34,8 +35,12 @@ npm install docusaurus-scraper
 ### Command Line Interface
 
 ```bash
-# Basic usage
+# Basic usage with auto-detection
 docusaurus-scraper https://docs.example.com
+
+# Specify documentation platform
+docusaurus-scraper https://docs.example.com --platform docusaurus
+docusaurus-scraper https://docs.managexr.com --platform mintlify
 
 # Specify output file
 docusaurus-scraper https://docs.example.com -o my-docs.md
@@ -50,22 +55,30 @@ docusaurus-scraper https://docs.example.com -t 15000 -d 1000
 docusaurus-scraper https://docs.example.com --no-metadata
 
 # Combine multiple options
-docusaurus-scraper https://docs.example.com -o output.md -t 20000 --no-headless
+docusaurus-scraper https://docs.example.com -o output.md -t 20000 --platform mintlify --no-headless
 ```
+
+### Supported Platforms
+
+- **Docusaurus** (`--platform docusaurus`): The original React-based documentation platform
+- **Mintlify** (`--platform mintlify`): Modern documentation platform with beautiful UX
+- **Auto-detection** (`--platform auto`, default): Automatically detects the platform type
 
 ### Programmatic Usage
 
 The package supports both CommonJS and ES Modules, and can be used with TypeScript:
 
 #### CommonJS
-```javascript
-const { DocusaurusScraper } = require('docusaurus-scraper');
 
-const scraper = new DocusaurusScraper({
+```javascript
+const { DocumentationScraper } = require('docusaurus-scraper');
+
+const scraper = new DocumentationScraper({
   headless: true,
   timeout: 10000,
   delay: 500,
   includeMetadata: true,
+  platform: 'auto', // or 'docusaurus', 'mintlify'
 });
 
 const markdown = await scraper.scrape('https://docs.example.com', 'output.md');
@@ -73,14 +86,16 @@ console.log('Documentation extracted successfully!');
 ```
 
 #### ES Modules
-```javascript
-import { DocusaurusScraper } from 'docusaurus-scraper';
 
-const scraper = new DocusaurusScraper({
+```javascript
+import { DocumentationScraper } from 'docusaurus-scraper';
+
+const scraper = new DocumentationScraper({
   headless: true,
   timeout: 10000,
   delay: 500,
   includeMetadata: true,
+  platform: 'mintlify', // Specify platform explicitly
 });
 
 const markdown = await scraper.scrape('https://docs.example.com', 'output.md');
@@ -88,17 +103,19 @@ console.log('Documentation extracted successfully!');
 ```
 
 #### TypeScript
+
 ```typescript
-import { DocusaurusScraper, ScraperOptions } from 'docusaurus-scraper';
+import { DocumentationScraper, ScraperOptions } from 'docusaurus-scraper';
 
 const options: ScraperOptions = {
   headless: true,
   timeout: 10000,
   delay: 500,
   includeMetadata: true,
+  platform: 'auto', // Platform can be specified here
 };
 
-const scraper = new DocusaurusScraper(options);
+const scraper = new DocumentationScraper(options);
 
 try {
   await scraper.scrape('https://docs.example.com', 'output.md');
@@ -110,25 +127,27 @@ try {
 
 ## CLI Options
 
-| Option                | Description                  | Default               |
-| --------------------- | ---------------------------- | --------------------- |
-| `-o, --output <file>` | Output markdown file         | `docs-{timestamp}.md` |
-| `--no-headless`       | Run browser in visible mode  | `false` (headless)    |
-| `-t, --timeout <ms>`  | Page timeout in milliseconds | `10000`               |
-| `-d, --delay <ms>`    | Delay between requests       | `500`                 |
-| `--no-metadata`       | Skip metadata in output      | `false` (include)     |
+| Option                  | Description                                | Default               |
+| ----------------------- | ------------------------------------------ | --------------------- |
+| `-o, --output <file>`   | Output markdown file                       | `docs-{timestamp}.md` |
+| `--no-headless`         | Run browser in visible mode                | `false` (headless)    |
+| `-t, --timeout <ms>`    | Page timeout in milliseconds               | `10000`               |
+| `-d, --delay <ms>`      | Delay between requests                     | `500`                 |
+| `--no-metadata`         | Skip metadata in output                    | `false` (include)     |
+| `-p, --platform <type>` | Platform type (docusaurus, mintlify, auto) | `auto`                |
 
 ## Configuration Options
 
 When using programmatically, you can pass these options to the constructor:
 
 ```javascript
-const scraper = new DocusaurusScraper({
+const scraper = new DocumentationScraper({
   headless: true, // Run browser in headless mode
   timeout: 10000, // Page load timeout
   delay: 500, // Delay between page requests
   includeMetadata: true, // Include metadata in output
   customSelectors: [], // Additional CSS selectors for content discovery
+  platform: 'auto', // Platform type: 'docusaurus', 'mintlify', 'auto'
 });
 ```
 
@@ -147,6 +166,7 @@ Example output structure:
 ```markdown
 # Documentation from: https://docs.example.com
 
+Platform: docusaurus
 Date: 2025-01-19T10:30:00.000Z
 
 ---
@@ -168,8 +188,10 @@ More content...
 
 ## Features
 
+- ✅ **Multi-Platform Support** - Works with Docusaurus, Mintlify, and other documentation platforms
+- ✅ **Auto-Detection** - Automatically detects the documentation platform type
 - ✅ **Automatic URL Discovery** - Finds documentation pages via sitemap or navigation crawling
-- ✅ **Content Extraction** - Intelligently identifies main content areas
+- ✅ **Content Extraction** - Intelligently identifies main content areas using platform-specific selectors
 - ✅ **Markdown Conversion** - Clean conversion preserving formatting
 - ✅ **Code Block Preservation** - Maintains syntax highlighting information
 - ✅ **Link Resolution** - Preserves internal and external links

@@ -1,7 +1,7 @@
 /**
  * Main entry point for the Docusaurus Scraper package
- * @module DocusaurusScraper
+ * @module DocumentationScraper
  */
 
-export { DocusaurusScraper } from './docusaurus-scraper.js';
+export { DocumentationScraper } from './documentation-scraper.js';
 export * from './types.js';
